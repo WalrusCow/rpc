@@ -1,0 +1,51 @@
+There are three parts:
+
+Client
+======
+
+Uses rpcCall only
+Requests server address for a specific function
+Send function call directly to server received from binder
+
+int rpcCall(char* name, int* argTypes, void** args) {
+  auto serverAddress = getServerAddress(name, argTypes);
+  if (!serverAddress) return 1; // No server available or request failed
+  // Updates args with results
+  auto response = requestFromServer(serverAddress, name, argTypes, args);
+  if (!response) return 2; // Server failed
+  return 0;
+}
+
+Client also calls rpcTerminate() which closes all servers & the binder
+
+
+Binder
+======
+
+Takes registration calls from a server for a particular function
+
+registerRpc(char* name, int* types, serverAddress) {
+  // Store this name with these types
+  // ... or, even better.. turn types into a string and append to name and
+  // store as a 1-levle map
+  functionMap[name][types] = serverAddress;
+}
+
+callRpc(char* name, int* types) {
+  return functionMap[name][types]
+}
+
+registerServer(serverAddres) {
+  // Stores a connection in a db or something. When connection is closed we
+  // know that server is gone.
+}
+
+Server
+======
+
+First calls rpcInit to open a persistent connection to the binder
+
+Next calls rpcRegister(char* name, int* types, skeleton f)
+  this should use almost identical data store as binder
+
+finally calls rpcExecute() which sends server into a listen loop
