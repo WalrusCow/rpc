@@ -1,10 +1,10 @@
-SOURCES = $(wildcard */*.cpp)
+SOURCES = $(wildcard server/*.cpp client/*.cpp common/*.cpp binder/*.cpp)
 OBJECTS = $(SOURCES:.cpp=.o)
 
-CXX=g++
-RM=rm -f
-DEBUG=-g
-CPPFLAGS=-pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
+CXX = g++
+RM = rm -f
+DEBUG = -g
+CPPFLAGS = -pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 -Wctor-dtor-privacy -Wdisabled-optimization -Wformat=2 -Winit-self \
 -Wlogical-op -Wmissing-declarations -Wmissing-include-dirs -Wnoexcept \
 -Woverloaded-virtual -Wredundant-decls -Wshadow \
@@ -13,10 +13,10 @@ CPPFLAGS=-pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 CXXFLAGS = -I. $(CPPFLAGS) -W -Wall -g -std=c++1y
 
 LDFLAGS = $(shell pkg-config) -lpthread
-MAIN=rpc
-LIB=lib$(MAIN).a
+MAIN = rpc
+LIB = lib$(MAIN).a
 
-OBJS=$(SERVER_OBJS) $(CLIENT_OBJS)
+OBJS = $(SERVER_OBJS) $(CLIENT_OBJS)
 
 all: $(MAIN)
 
