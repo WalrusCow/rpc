@@ -1,5 +1,8 @@
-SOURCES = $(wildcard server/*.cpp client/*.cpp common/*.cpp binder/*.cpp)
-OBJECTS = $(SOURCES:.cpp=.o)
+BINDER_SOURCES = $(wildcard src/common/*.cpp src/binder/*.cpp)
+BINDER_OBJECTS = $(BINDER_SOURCES:.cpp=.o)
+
+LIB_SOURCES = $(wildcard src/server/*.cpp src/client/*.cpp src/common/*.cpp)
+LIB_OBJECTS = $(LIB_SOURCES:.cpp=.o)
 
 CXX = g++
 RM = rm -f
@@ -10,22 +13,27 @@ CPPFLAGS = -pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 -Woverloaded-virtual -Wredundant-decls -Wshadow \
 -Wsign-promo -Wstrict-null-sentinel -Wstrict-overflow=5 \
 -Wswitch-default -Wundef -Werror -Wno-unused
-CXXFLAGS = -I. $(CPPFLAGS) -W -Wall -g -std=c++1y
+CXXFLAGS = -Isrc $(CPPFLAGS) -W -Wall -g -std=c++1y
 
 LDFLAGS = $(shell pkg-config) -lpthread
-MAIN = rpc
-LIB = lib$(MAIN).a
+RPC = rpc
+BINDER = binder
+LIB = lib$(RPC).a
 
 OBJS = $(SERVER_OBJS) $(CLIENT_OBJS)
 
-all: $(MAIN)
+all: $(LIB) $(BINDER)
 
-$(MAIN): $(OBJECTS)
-	ar cvq $(LIB) $(OBJECTS)
+$(BINDER): $(BINDER_OBJECTS)
+	@echo Creating $@...
+	@$(CXX) -o $@ $(BINDER_OBJECTS) $(LDFLAGS)
+
+$(LIB): $(LIB_OBJECTS)
+	ar cvq $(LIB) $(LIB_OBJECTS)
 
 %.o: %.cpp %.hpp
 	@echo Compiling $<...
 	@$(CXX) -o $@ -c $(CXXFLAGS) $<
 
 clean:
-	$(RM) $(OBJECTS) $(LIB)
+	$(RM) $(OBJECTS) $(LIB) $(BINDER)
