@@ -1,6 +1,7 @@
 #pragma once
 
-enum class Type {
+enum class MessageType {
+  INVALID,
   TERMINATION,
   REGISTRATION,
   CALL,

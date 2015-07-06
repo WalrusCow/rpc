@@ -1,6 +1,7 @@
-#include "binder/foo.hpp"
-#include <iostream>
+#include "binder/Binder.hpp"
 
 int main(void) {
-  std::cerr << foo() << std::endl;
+  Binder binder;
+  binder.connect();
+  binder.run();
 }

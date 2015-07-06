@@ -4,8 +4,12 @@
 #include <cstring>
 #include <iostream>
 
+#include <arpa/inet.h>
+#include <netinet/in.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
+const uint32_t Connection::BUFFER_LEN = 1024;
 
 Connection::Connection(int socket_) : socket(socket_) {
   struct sockaddr_in peerAddr;
@@ -35,7 +39,7 @@ int Connection::send(MessageType type, const std::string& str) {
   std::memcpy(buffer, &length, sizeof(length));
   std::memcpy(buffer + sizeof(length), &type, sizeof(type));
 
-  const auto writeSz = sizeof(length) + sizeof(type);
+  const uint32_t writeSz = sizeof(length) + sizeof(type);
   auto bytesWritten = write(socket, buffer, writeSz);
   if (bytesWritten < writeSz) {
     // Could not even write length and type: We'll call it an error
@@ -70,7 +74,7 @@ int Connection::doRead(
 
   ssize_t bytesReceived = 0;
   if (bytesToRead == 0) {
-    const auto readSz = sizeof(bytesToRead) + sizeof(messageType);
+    const uint32_t readSz = sizeof(bytesToRead) + sizeof(messageType);
     // We have to read the messagelength
     bytesReceived = reader(socket, buffer, readSz);
     if (bytesReceived == 0) {

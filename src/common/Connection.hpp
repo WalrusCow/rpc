@@ -12,8 +12,6 @@ class Connection {
 
   // Return negative on error; 0 on success. Blocks.
   int send(MessageType type, const std::string& str);
-  // Return negative on error; positive on done; 0 on not done
-  int read(MessageType* type, std::string* str);
 
   // Return negative on error; positive on done; 0 on not done
   int read(MessageType* type, std::string* result);
@@ -29,10 +27,11 @@ class Connection {
   std::string hostname;
 
  private:
+  static const uint32_t BUFFER_LEN;
+
   std::stringstream ss;
   uint32_t bytesToRead = 0;
-  MessageType messageType = 0;
-  const uint32_t BUFFER_LEN = 1024;
+  MessageType messageType = MessageType::INVALID;
 
   int doRead(MessageType* type,
              std::string* result,
