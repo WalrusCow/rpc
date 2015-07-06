@@ -10,8 +10,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "common/MessageType.hpp"
-
 namespace {
 
 void fatalError(const std::string& error, int exitCode) {
@@ -60,13 +58,13 @@ void Binder::waitForActivity() {
 
   int maxFd = mainSocket;
 
-  for (const auto& connection : clients) {
-    FD_SET(connection.socket, &readSet);
-    maxFd = std::max(maxFd, connection.socket);
+  for (const auto& client : clients) {
+    FD_SET(client.socket, &readSet);
+    maxFd = std::max(maxFd, client.socket);
   }
-  for (const auto& connection : servers) {
-    FD_SET(connection.socket, &readSet);
-    maxFd = std::max(maxFd, connection.socket);
+  for (const auto& server : servers) {
+    FD_SET(server.connection.socket, &readSet);
+    maxFd = std::max(maxFd, server.connection.socket);
   }
 
   if (select(maxFd + 1, &readSet, nullptr, nullptr, nullptr) < 0) {
@@ -88,101 +86,115 @@ void Binder::checkForNewConnections() {
   clients.emplace_back(newSocket);
 }
 
-void Binder::handleMessages(std::list<Connection>& connections,
-                            const Binder::ConnectionCallback& callback) {
-  auto i = connections.begin();
-  while (i != connections.end()) {
-    auto& connection = *i;
-    if (!FD_ISSET(connection.socket, &readSet)) {
-      i++;
-      continue;
-    }
-
-    std::string receivedMessage;
-    MessageType messageType;
-    int finished = connection.read(&messageType, &receivedMessage);
-    if (finished < 0) {
-      std::cerr << "Error on reading" << std::endl;
-      // Or we read nothing, so connection is closed anyway.
-      connection.close();
-      i = connections.erase(i);
-      continue;
-    }
-    if (finished == 0) {
-      // Not done reading yet
-      i++;
-      continue;
-    }
-
-    // Erase if the callback is true
-    if (callback(connection, messageType, receivedMessage)) {
-      i = connections.erase(i);
-    }
-  }
-}
-
-bool Binder::handleServerMessage(Connection& connection,
-                                 MessageType messageType,
-                                 const std::string& message) {
-  switch (messageType) {
-  case MessageType::REGISTRATION:
-    // Function registration
-    //auto signature = FunctionSignature::deserialize(receivedMessage);
-    //auto server = ServerConnection(connection);
-    //server.addSignature(signature);
+bool Binder::getMessage(Connection& connection, Message* message) {
+  if (!FD_ISSET(connection.socket, &readSet)) {
     return false;
+  }
 
-  default:
-    std::cerr << "Got unknown message from server: " << message << std::endl;
-    connection.close();
+  int finished = connection.read(&(message->type), &(message->message));
+  if (finished < 0) {
+    std::cerr << "Error on reading" << std::endl;
+    message->type = Message::Type::INVALID;
     return true;
+  }
+  if (finished == 0) {
+    // Not done reading yet
+    return false;
+  }
+
+  return true;
+}
+
+void Binder::handleServerMessages() {
+  Message message;
+  auto i = servers.begin();
+  while (i != servers.end()) {
+    auto& server = *i;
+
+    if (!getMessage(server.connection, &message)) {
+      ++i;
+      continue;
+    }
+
+    switch (message.type) {
+    case Message::Type::REGISTRATION:
+      // Function registration
+      //auto signature = FunctionSignature::deserialize(receivedMessage);
+      //auto server = ServerConnection(connection);
+      //server.addSignature(signature);
+      break;
+
+    default:
+      std::cerr << "Got unknown message " << message.message << std::endl;
+      server.connection.close();
+      i = servers.erase(i);
+      break;
+    }
   }
 }
 
-bool Binder::handleClientMessage(Connection& connection,
-                                 MessageType messageType,
-                                 const std::string& message) {
-  switch (messageType) {
-  case MessageType::TERMINATION:
-    // We must terminate all servers
-    //for (const auto& server : servers) {
-    //  server.terminate();
-    //}
-    connection.close();
-    return true;
+void Binder::handleClientMessages() {
+  Message message;
+  auto i = clients.begin();
+  while (i != clients.end()) {
+    auto& client = *i;
+    if (!getMessage(client, &message)) {
+      ++i;
+      continue;
+    }
 
-  case MessageType::ADDRESS:
-    // Client wanting server address
-    //auto signature = FunctionSignature::deserialize(receivedMessage);
-    //auto server = getServer(signature);
-    //connection.send(messageType, server.serialize());
-    connection.close();
-    return true;
+    switch (message.type) {
+    case Message::Type::TERMINATION:
+      // We must terminate all servers
+      for (auto& server : servers) {
+        server.terminate();
+      }
+      servers.clear();
+      stopped = true;
 
-  case MessageType::SERVER_REGISTRATION:
-    // This client is actually a server registering itself
-    // Do not close the connection
-    servers.push_back(std::move(connection));
-    return true;
+      client.close();
+      // TODO: Stop the binder...
+      break;
 
-  default:
-    // Some invalid type
-    std::cerr << "Saw invalid message " << message << std::endl;
-    return true;
+    case Message::Type::ADDRESS:
+      // Client wanting server address
+      //auto signature = FunctionSignature::deserialize(receivedMessage);
+      //auto server = getServer(signature);
+      //connection.send(messageType, server.serialize());
+      client.close();
+      break;
+
+    case Message::Type::SERVER_REGISTRATION:
+      // This client is actually a server registering itself
+      // Do not close the connection
+      servers.emplace_back(std::move(client));
+      break;
+
+    default:
+      // Some invalid type
+      std::cerr << "Saw invalid message " << message.message << std::endl;
+      client.close();
+      break;
+    }
+    i = clients.erase(i);
   }
 }
 
 void Binder::run() {
-  while(true) {
+  while (!stopped) {
     waitForActivity();
     checkForNewConnections();
-    handleMessages(
-        servers, [=] (Connection& c, MessageType m, const std::string& s) {
-      return handleServerMessage(c, m, s);
-    });
-    handleMessages(
-        clients, [=] (Connection& c, MessageType m, const std::string& s) {
-      return handleServerMessage(c, m, s);
-    });
+    handleClientMessages();
+    handleServerMessages();
   }
+
+  // If we still have any open, just terminate them now
+  for (auto& client : clients) {
+    client.close();
+  }
+  for (auto& server : servers) {
+    // For some reason we still have some open
+    server.terminate();
+  }
+  std::cerr << "System shutting down" << std::endl;
 }

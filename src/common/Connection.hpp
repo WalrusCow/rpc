@@ -4,7 +4,7 @@
 #include <string>
 #include <sstream>
 
-#include "common/MessageType.hpp"
+#include "common/Message.hpp"
 
 class Connection {
  public:
@@ -20,11 +20,11 @@ class Connection {
   }
 
   // Return negative on error; 0 on success. Blocks.
-  int send(MessageType type, const std::string& str);
+  int send(Message::Type type, const std::string& str);
 
   // Return negative on error; positive on done; 0 on not done
-  int read(MessageType* type, std::string* result);
-  int recv(MessageType* type, std::string* result);
+  int read(Message::Type* type, std::string* result);
+  int recv(Message::Type* type, std::string* result);
 
   void close();
 
@@ -40,9 +40,9 @@ class Connection {
 
   std::stringstream ss;
   uint32_t bytesToRead = 0;
-  MessageType messageType = MessageType::INVALID;
+  Message::Type messageType = Message::Type::INVALID;
 
-  int doRead(MessageType* type,
+  int doRead(Message::Type* type,
              std::string* result,
              const std::function<ssize_t(int, char*, size_t)>& reader);
 };

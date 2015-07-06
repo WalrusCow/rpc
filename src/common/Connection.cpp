@@ -30,7 +30,7 @@ void Connection::close() {
   ::close(socket);
 }
 
-int Connection::send(MessageType type, const std::string& str) {
+int Connection::send(Message::Type type, const std::string& str) {
   // NOTE: Send length does not include type size
   uint32_t length = str.size() + 1;
   char buffer[BUFFER_LEN];
@@ -67,7 +67,7 @@ int Connection::send(MessageType type, const std::string& str) {
 }
 
 int Connection::doRead(
-    MessageType* type,
+    Message::Type* type,
     std::string* result,
     const std::function<ssize_t(int, char*, size_t)>& reader) {
   char buffer[BUFFER_LEN];
@@ -122,13 +122,13 @@ int Connection::doRead(
   return 0;
 }
 
-int Connection::read(MessageType* type, std::string* result) {
+int Connection::read(Message::Type* type, std::string* result) {
   return doRead(type, result, [&] (int sfd, char* buffer, size_t toRead) {
     return ::read(sfd, buffer, toRead);
   });
 }
 
-int Connection::recv(MessageType* type, std::string* result) {
+int Connection::recv(Message::Type* type, std::string* result) {
   return doRead(type, result, [&] (int sfd, char* buffer, size_t toRead) {
       return ::recv(sfd, buffer, toRead, 0);
   });

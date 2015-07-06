@@ -36,4 +36,4 @@ $(LIB): $(LIB_OBJECTS)
 	@$(CXX) -o $@ -c $(CXXFLAGS) $<
 
 clean:
-	$(RM) $(OBJECTS) $(LIB) $(BINDER)
+	$(RM) $(LIB_OBJECTS) $(BINDER_OBJECTS) $(LIB) $(BINDER)

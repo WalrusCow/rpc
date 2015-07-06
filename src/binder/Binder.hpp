@@ -6,7 +6,9 @@
 
 #include <netinet/in.h>
 
+#include "binder/Server.hpp"
 #include "common/Connection.hpp"
+#include "common/Message.hpp"
 
 class Binder {
  public:
@@ -18,25 +20,17 @@ class Binder {
   struct sockaddr_in sin;
   socklen_t sinLen = sizeof(sin);
 
+  bool stopped = false;
+
   // List of available servers
-  std::list<Connection> servers;
+  std::list<Server> servers;
   std::list<Connection> clients;
   fd_set readSet;
 
+  bool getMessage(Connection& connection, Message* message);
+
   void waitForActivity();
   void checkForNewConnections();
-
-  // Return true if the connection is done with
-  typedef std::function<bool(
-      Connection&, MessageType, const std::string&)> ConnectionCallback;
-  void handleMessages(std::list<Connection>& connections,
-                      const ConnectionCallback& callback);
-
-  bool handleClientMessage(Connection& connection,
-                           MessageType messageType,
-                           const std::string& message);
-
-  bool handleServerMessage(Connection& connection,
-                           MessageType messageType,
-                           const std::string& message);
+  void handleClientMessages();
+  void handleServerMessages();
 };

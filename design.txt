@@ -22,6 +22,21 @@ Client also calls rpcTerminate() which closes all servers & the binder
 Binder
 ======
 
+When the Binder receives a connection, it adds it to the list of active
+connections. This list is for clients, or servers while they initially
+register.
+
+  -  A server connection will send a message of type SERVER_REGISTRATION
+     to let the Binder know that a particular connection corresponds to a server.
+
+  - A server may later send function registration requests to the Binder.
+
+  - The Binder adds the server connection to the server connections list,
+    and removes it from the other connections list.
+
+  - The Binder must listen to the server connections to see if it gets a read
+    of size 0. A read of size 0 means the server is terminated.
+
 Takes registration calls from a server for a particular function
 
 registerRpc(char* name, int* types, serverAddress) {
@@ -39,6 +54,8 @@ registerServer(serverAddres) {
   // Stores a connection in a db or something. When connection is closed we
   // know that server is gone.
 }
+
+// Binder can have connections from clients and also some from the servers
 
 Server
 ======
