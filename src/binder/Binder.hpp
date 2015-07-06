@@ -7,7 +7,6 @@
 #include <netinet/in.h>
 
 #include "common/Connection.hpp"
-#include "binder/ServerConnection.hpp"
 
 class Binder {
  public:
@@ -20,11 +19,24 @@ class Binder {
   socklen_t sinLen = sizeof(sin);
 
   // List of available servers
-  std::list<ServerConnection> servers;
-  std::list<Connection> connections;
+  std::list<Connection> servers;
+  std::list<Connection> clients;
   fd_set readSet;
 
   void waitForActivity();
   void checkForNewConnections();
-  void handleConnections();
+
+  // Return true if the connection is done with
+  typedef std::function<bool(
+      Connection&, MessageType, const std::string&)> ConnectionCallback;
+  void handleMessages(std::list<Connection>& connections,
+                      const ConnectionCallback& callback);
+
+  bool handleClientMessage(Connection& connection,
+                           MessageType messageType,
+                           const std::string& message);
+
+  bool handleServerMessage(Connection& connection,
+                           MessageType messageType,
+                           const std::string& message);
 };

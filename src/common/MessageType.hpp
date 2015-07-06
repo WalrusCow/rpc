@@ -6,4 +6,5 @@ enum class MessageType {
   REGISTRATION,
   CALL,
   ADDRESS,
+  SERVER_REGISTRATION,
 };

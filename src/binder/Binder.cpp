@@ -60,7 +60,11 @@ void Binder::waitForActivity() {
 
   int maxFd = mainSocket;
 
-  for (const auto& connection : connections) {
+  for (const auto& connection : clients) {
+    FD_SET(connection.socket, &readSet);
+    maxFd = std::max(maxFd, connection.socket);
+  }
+  for (const auto& connection : servers) {
     FD_SET(connection.socket, &readSet);
     maxFd = std::max(maxFd, connection.socket);
   }
@@ -81,11 +85,11 @@ void Binder::checkForNewConnections() {
     // Error
     std::cerr << "Error accepting new socket" << std::endl;
   }
-  connections.emplace_back(newSocket);
+  clients.emplace_back(newSocket);
 }
 
-void Binder::handleConnections() {
-  // Check clients for activity too
+void Binder::handleMessages(std::list<Connection>& connections,
+                            const Binder::ConnectionCallback& callback) {
   auto i = connections.begin();
   while (i != connections.end()) {
     auto& connection = *i;
@@ -99,48 +103,72 @@ void Binder::handleConnections() {
     int finished = connection.read(&messageType, &receivedMessage);
     if (finished < 0) {
       std::cerr << "Error on reading" << std::endl;
+      // Or we read nothing, so connection is closed anyway.
       connection.close();
       i = connections.erase(i);
       continue;
     }
-    if (!finished) {
+    if (finished == 0) {
+      // Not done reading yet
       i++;
       continue;
     }
 
-    switch (messageType) {
-    case MessageType::TERMINATION:
-      // We must terminate all servers
-      //for (const auto& server : servers) {
-      //  server.terminate();
-      //}
-      connection.close();
-      break;
-    case MessageType::REGISTRATION:
-      // Function registration
-      //auto signature = FunctionSignature::deserialize(receivedMessage);
-      //auto server = ServerConnection(connection);
-      //server.addSignature(signature);
-      // Do not close the connection: It remains open indefinitely
-      break;
-    case MessageType::ADDRESS:
-      // Client wanting server address
-      //auto signature = FunctionSignature::deserialize(receivedMessage);
-      //auto server = getServer(signature);
-      //connection.send(messageType, server.serialize());
-      connection.close();
-      break;
-    default:
-      // Some invalid type
-      std::cerr << "Saw invalid message " << receivedMessage << std::endl;
-      connection.close();
-      break;
+    // Erase if the callback is true
+    if (callback(connection, messageType, receivedMessage)) {
+      i = connections.erase(i);
     }
+  }
+}
 
-    // Done reading. Remove from queue
-    // TODO: Find a better API for this... We cannot erase every time
-    // (cannot erase server connection)
-    i = connections.erase(i);
+bool Binder::handleServerMessage(Connection& connection,
+                                 MessageType messageType,
+                                 const std::string& message) {
+  switch (messageType) {
+  case MessageType::REGISTRATION:
+    // Function registration
+    //auto signature = FunctionSignature::deserialize(receivedMessage);
+    //auto server = ServerConnection(connection);
+    //server.addSignature(signature);
+    return false;
+
+  default:
+    std::cerr << "Got unknown message from server: " << message << std::endl;
+    connection.close();
+    return true;
+  }
+}
+
+bool Binder::handleClientMessage(Connection& connection,
+                                 MessageType messageType,
+                                 const std::string& message) {
+  switch (messageType) {
+  case MessageType::TERMINATION:
+    // We must terminate all servers
+    //for (const auto& server : servers) {
+    //  server.terminate();
+    //}
+    connection.close();
+    return true;
+
+  case MessageType::ADDRESS:
+    // Client wanting server address
+    //auto signature = FunctionSignature::deserialize(receivedMessage);
+    //auto server = getServer(signature);
+    //connection.send(messageType, server.serialize());
+    connection.close();
+    return true;
+
+  case MessageType::SERVER_REGISTRATION:
+    // This client is actually a server registering itself
+    // Do not close the connection
+    servers.push_back(std::move(connection));
+    return true;
+
+  default:
+    // Some invalid type
+    std::cerr << "Saw invalid message " << message << std::endl;
+    return true;
   }
 }
 
@@ -148,6 +176,13 @@ void Binder::run() {
   while(true) {
     waitForActivity();
     checkForNewConnections();
-    handleConnections();
+    handleMessages(
+        servers, [=] (Connection& c, MessageType m, const std::string& s) {
+      return handleServerMessage(c, m, s);
+    });
+    handleMessages(
+        clients, [=] (Connection& c, MessageType m, const std::string& s) {
+      return handleServerMessage(c, m, s);
+    });
   }
 }

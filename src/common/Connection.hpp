@@ -9,6 +9,15 @@
 class Connection {
  public:
   Connection(int socket_);
+  // We need g++5.0 in order to be able to std::move a stringstream :(
+  Connection(Connection&& o) :
+      socket(std::move(o.socket)),
+      port(std::move(o.port)),
+      hostname(std::move(o.hostname)),
+      bytesToRead(std::move(o.bytesToRead)),
+      messageType(std::move(o.messageType)) {
+    ss << o.ss;
+  }
 
   // Return negative on error; 0 on success. Blocks.
   int send(MessageType type, const std::string& str);
