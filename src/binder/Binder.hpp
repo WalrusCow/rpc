@@ -2,7 +2,6 @@
 
 #include <list>
 #include <string>
-#include <sstream>
 
 #include <netinet/in.h>
 
@@ -10,27 +9,32 @@
 #include "common/Connection.hpp"
 #include "common/Message.hpp"
 
+
+#include "common/SocketServer.hpp"
+
 class Binder {
  public:
   void run();
   void connect();
 
  private:
-  int mainSocket;
-  struct sockaddr_in sin;
-  socklen_t sinLen = sizeof(sin);
+  SocketServer server;
 
-  bool stopped = false;
-
+  bool handleClientMessage(const Message& message, Connection& conn);
+  bool handleServerMessage(const Message& message, Connection& conn);
   // List of available servers
-  std::list<Server> servers;
-  std::list<Connection> clients;
-  fd_set readSet;
+  //std::list<Server> servers;
 
-  bool getMessage(Connection& connection, Message* message);
-
-  void waitForActivity();
-  void checkForNewConnections();
-  void handleClientMessages();
-  void handleServerMessages();
+  SocketServer::MessageHandler clientHandler =
+    [&] (const Message& m, Connection& c) {
+      return handleClientMessage(m, c);
+  };
+  SocketServer::MessageHandler serverHandler =
+    [&] (const Message& m, Connection& c) {
+      return handleServerMessage(m, c);
+  };
+  SocketServer::ClientList clients = SocketServer::ClientList(
+      "clients", clientHandler);
+  SocketServer::ClientList servers = SocketServer::ClientList(
+      "servers", serverHandler);
 };
