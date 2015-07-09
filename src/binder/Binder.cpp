@@ -37,11 +37,13 @@ bool Binder::handleServerMessage(const Message& message, Connection& conn) {
     std::cerr << "Server ready" << std::endl;
     return false;
   case Message::Type::RPC_REGISTRATION:
+  {
     // Function registration
-    //auto signature = FunctionSignature::deserialize(receivedMessage);
+    auto signature = FunctionSignature::deserialize(message);
     //auto server = ServerConnection(connection);
     //server.addSignature(signature);
     return false;
+  }
 
   default:
     std::cerr << "Got unknown message " << message.message << std::endl;
@@ -59,6 +61,7 @@ bool Binder::handleClientMessage(const Message& message, Connection& client) {
       conn.close();
     }
     servers.clients.clear();
+    // All done
     server.stop();
 
     client.close();

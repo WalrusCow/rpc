@@ -8,8 +8,6 @@
 #include "binder/Server.hpp"
 #include "common/Connection.hpp"
 #include "common/Message.hpp"
-
-
 #include "common/SocketServer.hpp"
 
 class Binder {
