@@ -67,13 +67,14 @@ int Connection::send(Message::Type type, const std::string& str) {
 }
 
 int Connection::doRead(
-    Message::Type* type,
-    std::string* result,
+    Message* message,
     const std::function<ssize_t(int, char*, size_t)>& reader) {
   char buffer[BUFFER_LEN];
 
   ssize_t bytesReceived = 0;
   if (bytesToRead == 0) {
+    ss.str("");
+    ss.clear();
     const uint32_t readSz = sizeof(bytesToRead) + sizeof(messageType);
     // We have to read the messagelength
     bytesReceived = reader(socket, buffer, readSz);
@@ -92,8 +93,8 @@ int Connection::doRead(
 
   if (bytesToRead == 0) {
     // If we still have nothing to read then there *is* nothing to read.
-    *result = "";
-    *type = messageType;
+    message->message = "";
+    message->type = messageType;
     return 1;
   }
 
@@ -113,8 +114,8 @@ int Connection::doRead(
 
   // We have read the whole message
   if (bytesToRead <= 0) {
-    *result = ss.str();
-    *type = messageType;
+    message->message = ss.str();
+    message->type = messageType;
     // Done
     return 1;
   }
@@ -122,14 +123,14 @@ int Connection::doRead(
   return 0;
 }
 
-int Connection::read(Message::Type* type, std::string* result) {
-  return doRead(type, result, [&] (int sfd, char* buffer, size_t toRead) {
+int Connection::read(Message* message) {
+  return doRead(message, [&] (int sfd, char* buffer, size_t toRead) {
     return ::read(sfd, buffer, toRead);
   });
 }
 
-int Connection::recv(Message::Type* type, std::string* result) {
-  return doRead(type, result, [&] (int sfd, char* buffer, size_t toRead) {
+int Connection::recv(Message* message) {
+  return doRead(message, [&] (int sfd, char* buffer, size_t toRead) {
       return ::recv(sfd, buffer, toRead, 0);
   });
 }

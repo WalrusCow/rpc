@@ -12,7 +12,7 @@ extern "C" int rpcInit() {
 }
 
 extern "C" int rpcRegister(char* name, int* argTypes, skeleton f) {
-  return server.registerRpc(name, argTypes, f) ? 0 : -1;
+  return server.registerRpc(name, argTypes, f);
 }
 
 extern "C" int rpcExecute() {

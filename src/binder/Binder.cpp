@@ -34,19 +34,19 @@ void Binder::connect() {
 bool Binder::handleServerMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::SERVER_READY:
-    std::cerr << "Server ready" << std::endl;
     return false;
   case Message::Type::RPC_REGISTRATION:
   {
     // Function registration
     auto signature = FunctionSignature::deserialize(message);
-    //auto server = ServerConnection(connection);
-    //server.addSignature(signature);
+    if (serverSignatures.find(conn.socket) == serverSignatures.end()) {
+      serverSignatures[conn.socket] = {};
+    }
+    serverSignatures[conn.socket].push_back(signature);
     return false;
   }
 
   default:
-    std::cerr << "Got unknown message " << message.message << std::endl;
     conn.close();
     return true;
   }
@@ -84,7 +84,6 @@ bool Binder::handleClientMessage(const Message& message, Connection& client) {
 
   default:
     // Some invalid type
-    std::cerr << "Saw invalid message " << message.message << std::endl;
     client.close();
     break;
   }

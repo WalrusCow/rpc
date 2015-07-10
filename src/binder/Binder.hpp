@@ -1,6 +1,7 @@
 #pragma once
 
 #include <list>
+#include <map>
 #include <string>
 
 #include <netinet/in.h>
@@ -35,4 +36,7 @@ class Binder {
       "clients", clientHandler);
   SocketServer::ClientList servers = SocketServer::ClientList(
       "servers", serverHandler);
+
+  // Map a server connection (socket) to a list of functions it can provide
+  std::map<int, std::list<FunctionSignature>> serverSignatures;
 };

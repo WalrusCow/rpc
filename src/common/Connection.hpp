@@ -23,8 +23,8 @@ class Connection {
   int send(Message::Type type, const std::string& str);
 
   // Return negative on error; positive on done; 0 on not done
-  int read(Message::Type* type, std::string* result);
-  int recv(Message::Type* type, std::string* result);
+  int read(Message* message);
+  int recv(Message* message);
 
   void close();
 
@@ -42,7 +42,6 @@ class Connection {
   uint32_t bytesToRead = 0;
   Message::Type messageType = Message::Type::INVALID;
 
-  int doRead(Message::Type* type,
-             std::string* result,
+  int doRead(Message* message,
              const std::function<ssize_t(int, char*, size_t)>& reader);
 };

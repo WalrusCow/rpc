@@ -34,8 +34,8 @@ bool Server::connectToBinder() {
     return false;
   }
   binderClientList.clients.emplace_back(binderSocket);
-  auto& binderConnection = binderClientList.clients.front();
-  return binderConnection.send(Message::Type::SERVER_REGISTRATION, "") == 0;
+  binderConnection = &binderClientList.clients.front();
+  return binderConnection->send(Message::Type::SERVER_REGISTRATION, "") == 0;
 }
 
 bool Server::connect() {
@@ -45,8 +45,7 @@ bool Server::connect() {
 bool Server::run() {
   server.addClientList(&clients);
   server.addClientList(&binderClientList);
-  auto& binderConnection = binderClientList.clients.front();
-  if (binderConnection.send(Message::Type::SERVER_READY, "") < 0) {
+  if (binderConnection->send(Message::Type::SERVER_READY, "") < 0) {
     return false;
   }
 
@@ -54,8 +53,26 @@ bool Server::run() {
   return server.serve();
 }
 
-bool Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
-  return true;
+int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
+  bool warning = false;
+  FunctionSignature signature(name, argTypes);
+  for (const auto& function : registeredFunctions) {
+    if (function.signature == signature) {
+      warning = true;
+      break;
+    }
+  }
+
+  registeredFunctions.emplace_back(signature, f);
+
+  // Now send to binder
+  if (!binderConnection->send(
+      Message::Type::RPC_REGISTRATION, signature.serialize())) {
+    // Error
+    return -1;
+  }
+
+  return warning ? 1 : 0;
 }
 
 bool Server::handleMessage(const Message& message, Connection& conn) {
@@ -66,7 +83,6 @@ bool Server::handleMessage(const Message& message, Connection& conn) {
 
   default:
     // Some invalid type
-    std::cerr << "Saw invalid message " << message.message << std::endl;
     conn.close();
     break;
   }
@@ -82,7 +98,8 @@ bool Server::handleBinderMessage(const Message& message, Connection& conn) {
     return true;
   }
   else {
-    std::cerr << "Bad message from Binder: " << message.message << std::endl;
+    conn.close();
+    server.stop();
     return false;
   }
 }

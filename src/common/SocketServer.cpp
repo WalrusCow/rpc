@@ -83,7 +83,7 @@ bool SocketServer::getMessage(Connection& connection, Message* message) {
     return false;
   }
 
-  int finished = connection.read(&(message->type), &(message->message));
+  int finished = connection.read(message);
   if (finished < 0) {
     std::cerr << "Error on reading" << std::endl;
     message->type = Message::Type::INVALID;

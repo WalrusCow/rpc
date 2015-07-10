@@ -2,6 +2,8 @@
 
 #include <sstream>
 
+const uint32_t FunctionSignature::ARR_BITS = 0x0000FFFF;
+
 FunctionSignature::FunctionSignature(
     const std::string& name_, const int* argTypes_) : name(name_) {
   while (*argTypes_) {
@@ -45,7 +47,7 @@ std::string FunctionSignature::serialize() {
   return ss.str();
 }
 
-bool FunctionSignature::operator==(const FunctionSignature& other) {
+bool FunctionSignature::operator==(const FunctionSignature& other) const {
   if (name != other.name || argTypes.size() != other.argTypes.size()) {
     return false;
   }

@@ -13,11 +13,11 @@ class FunctionSignature {
   static FunctionSignature deserialize(const Message& message);
   std::string serialize();
 
-  bool operator==(const FunctionSignature& other);
+  bool operator==(const FunctionSignature& other) const;
 
- private:
+ public:
   // Lower bits are for the array size
-  const uint32_t ARR_BITS = 0x0000FFFF;
-  const std::string name;
+  static const uint32_t ARR_BITS;
+  std::string name;
   std::vector<int> argTypes;
 };

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <list>
 #include <string>
 
 #include <cstring>
@@ -11,6 +12,7 @@
 #include "rpc.h"
 
 #include "common/Connection.hpp"
+#include "common/FunctionSignature.hpp"
 #include "common/SocketServer.hpp"
 
 class Server {
@@ -18,7 +20,7 @@ class Server {
   // Connect to the binder and open a socket for listening to clients
   bool connect();
   bool run();
-  bool registerRpc(const std::string& name, int* argTypes, skeleton f);
+  int registerRpc(const std::string& name, int* argTypes, skeleton f);
 
  private:
   SocketServer server;
@@ -43,12 +45,24 @@ class Server {
   // TODO: Thread pool to service requests?
   //std::list<std::thread> pendingRequests;
 
+  // Functions that we support
+  struct ServerFunction {
+    ServerFunction(const FunctionSignature& sig, skeleton f)
+        : signature(sig), function(f) {}
+    FunctionSignature signature;
+    skeleton function;
+  };
+  std::list<ServerFunction> registeredFunctions;
+
   SocketServer::ClientList clients =
     SocketServer::ClientList("clients", messageHandler);
   SocketServer::ClientList binderClientList =
     SocketServer::ClientList("binder", binderHandler);
+  // Direct pointer to binder (ease of access0
+  Connection* binderConnection;
 
   bool connectToBinder();
+
 
   // Check if the binder has requested termination
   bool terminationRequested();
