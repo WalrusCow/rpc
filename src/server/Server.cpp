@@ -77,13 +77,13 @@ int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
   }
 
   // Now send to binder
-  if (!binderConnection->send(
-      Message::Type::RPC_REGISTRATION, signature.serialize())) {
+  if (binderConnection->send(
+      Message::Type::RPC_REGISTRATION, signature.serialize()) < 0) {
     // Error
     return -1;
   }
 
-  if (oldFunction) {
+  if (oldFunction != nullptr) {
     *oldFunction = ServerFunction(signature, f);
   }
   else {
