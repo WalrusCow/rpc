@@ -54,6 +54,8 @@ class Server {
   };
   std::list<ServerFunction> registeredFunctions;
 
+  ServerFunction* getFunction(const FunctionSignature& signature);
+
   SocketServer::ClientList clients =
     SocketServer::ClientList("clients", messageHandler);
   SocketServer::ClientList binderClientList =

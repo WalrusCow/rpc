@@ -9,10 +9,10 @@ FunctionCall::FunctionCall(
     FunctionSignature&& signature_, const std::string& data)
     : signature(std::move(signature_)),
       dataContainer(data.begin(), data.end()) {
-
   // Check for sanity...
   std::cerr << "Data container: " << dataContainer.size()
             << " Signature size: " << signature.getDataSize() << std::endl;
+  copyArgPointers();
 }
 
 
@@ -33,6 +33,7 @@ FunctionCall::FunctionCall(FunctionSignature&& signature_, void** data)
 
   std::cerr << "Data container: " << dataContainer.size()
             << " Signature size: " << signature.getDataSize() << std::endl;
+  copyArgPointers();
 }
 
 FunctionCall FunctionCall::deserialize(const Message& message) {
@@ -62,5 +63,17 @@ void FunctionCall::writeDataTo(void** out) {
     size_t sz = signature.getArgSize(i);
     std::memcpy(out[i], (void*) (dataContainer.data() + sizeSoFar), sz);
     sizeSoFar += sz;
+  }
+}
+
+void** FunctionCall::getArgArray() {
+  return argPointers.data();
+}
+
+void FunctionCall::copyArgPointers() {
+  char* dataPoint = dataContainer.data();
+  for (size_t i = 0; i < signature.numArgs(); ++i) {
+    argPointers.push_back((void*) dataPoint);
+    dataPoint += signature.getArgSize(i);
   }
 }

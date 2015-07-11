@@ -7,11 +7,7 @@
 
 class FunctionCall {
  public:
-  //FunctionCall(const FunctionSignature& signature_, void** data_);
-      //: signature(signature_), data(data_) {}
   FunctionCall(FunctionSignature&& signature_, void** data);
-      //: signature(std::move(signature_)), data(data_) {}
-
   FunctionCall(FunctionSignature&& signature_, const std::string& data);
 
   FunctionSignature signature;
@@ -20,7 +16,11 @@ class FunctionCall {
   static FunctionCall deserialize(const Message& message);
 
   void writeDataTo(void** out);
+  void** getArgArray();
 
  private:
   std::vector<char> dataContainer;
+  std::vector<void*> argPointers;
+
+  void copyArgPointers();
 };

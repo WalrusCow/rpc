@@ -3,6 +3,8 @@
 #include <iostream>
 #include <unistd.h>
 
+#include "common/FunctionCall.hpp"
+
 bool Server::connectToBinder() {
   char* binderHostname = getenv("BINDER_ADDRESS");
   if (!binderHostname) {
@@ -94,8 +96,21 @@ int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
 bool Server::handleMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::CALL:
+  {
+    // TODO: Put this in a damn function
     // Call me maybe...
+    auto functionCall = FunctionCall::deserialize(message);
+    ServerFunction* function = getFunction(functionCall.signature);
+    if (function == nullptr) {
+      conn.close();
+      break;
+    }
+    int* argTypes = functionCall.signature.getArgTypes();
+    void** args = functionCall.getArgArray();
+    function->function(argTypes, args);
+    conn.send(Message::Type::CALL, functionCall.serialize());
     break;
+  }
 
   default:
     // Some invalid type
@@ -119,4 +134,14 @@ bool Server::handleBinderMessage(const Message& message, Connection& conn) {
     server.stop();
     return false;
   }
+}
+
+Server::ServerFunction* Server::getFunction(
+    const FunctionSignature& signature) {
+  for (auto& function : registeredFunctions) {
+    if (function.signature == signature) {
+      return &function;
+    }
+  }
+  return nullptr;
 }

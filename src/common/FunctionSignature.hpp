@@ -22,6 +22,8 @@ class FunctionSignature {
   size_t getArgSize(size_t idx) const;
   size_t numArgs() const;
 
+  int* getArgTypes();
+
  private:
   // Lower bits are for the array size
   static const int ARR_BITS;

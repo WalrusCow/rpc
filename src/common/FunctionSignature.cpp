@@ -100,3 +100,7 @@ size_t FunctionSignature::getTypeSize(int type) const {
     return 0;
   }
 }
+
+int* FunctionSignature::getArgTypes() {
+  return argTypes.data();
+}
