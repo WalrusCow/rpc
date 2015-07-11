@@ -46,6 +46,11 @@ bool Server::connect() {
 }
 
 bool Server::run() {
+  if (registeredFunctions.size() == 0) {
+    // Did not register any functions: Error
+    return false;
+  }
+
   server.addClientList(&clients);
   server.addClientList(&binderClientList);
   if (binderConnection->send(Message::Type::SERVER_READY, "") < 0) {

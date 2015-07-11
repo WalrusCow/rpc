@@ -63,7 +63,6 @@ class Server {
 
   bool connectToBinder();
 
-
   // Check if the binder has requested termination
   bool terminationRequested();
 };
