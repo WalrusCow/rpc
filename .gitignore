@@ -1,5 +1,6 @@
 binder
 server
+client
 *.o
 *.a
 *.d
