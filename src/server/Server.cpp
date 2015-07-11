@@ -35,11 +35,14 @@ bool Server::connectToBinder() {
   }
   binderClientList.clients.emplace_back(binderSocket);
   binderConnection = &binderClientList.clients.front();
-  return binderConnection->send(Message::Type::SERVER_REGISTRATION, "") == 0;
+  int success = binderConnection->send(
+      Message::Type::SERVER_REGISTRATION,
+      serverAddress.serialize());
+  return success == 0;
 }
 
 bool Server::connect() {
-  return connectToBinder() && server.connect(&serverAddress);
+  return server.connect(&serverAddress) && connectToBinder();
 }
 
 bool Server::run() {

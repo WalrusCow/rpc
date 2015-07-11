@@ -23,7 +23,7 @@ void fatalError(const std::string& error, int exitCode) {
 
 void Binder::connect() {
   ServerAddress address;
-  if (!server.connect(&address)) {
+  if (!socketServer.connect(&address)) {
     fatalError("Could not connect", -1);
   }
   std::cerr << "BINDER_ADDRESS " << address.hostname << std::endl;
@@ -34,15 +34,24 @@ void Binder::connect() {
 bool Binder::handleServerMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::SERVER_READY:
+  {
+    Server* server = getServer(conn.socket);
+    //TODO
+    //if (server == nullptr) {
+      // Shitttah!
+    //}
+    server->ready = true;
     return false;
+  }
+
   case Message::Type::RPC_REGISTRATION:
   {
     // Function registration
-    auto signature = FunctionSignature::deserialize(message);
-    if (serverSignatures.find(conn.socket) == serverSignatures.end()) {
-      serverSignatures[conn.socket] = {};
-    }
-    serverSignatures[conn.socket].push_back(signature);
+    // Now see if we have this signature already in here?
+    Server* server = getServer(conn.socket);
+    //TODO
+    //if (server == nullptr)
+    server->signatures.emplace_back(FunctionSignature::deserialize(message));
     return false;
   }
 
@@ -52,20 +61,19 @@ bool Binder::handleServerMessage(const Message& message, Connection& conn) {
   }
 }
 
-bool Binder::handleClientMessage(const Message& message, Connection& client) {
+bool Binder::handleClientMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::TERMINATION:
     // We must terminate all servers
-    for (auto& conn : servers.clients) {
-      conn.send(Message::Type::TERMINATION, "");
-      conn.close();
+    for (auto& server : serverConnections.clients) {
+      server.send(Message::Type::TERMINATION, "");
+      server.close();
     }
-    servers.clients.clear();
+    serverConnections.clients.clear();
     // All done
-    server.stop();
+    socketServer.stop();
 
-    client.close();
-    // TODO: Stop the binder...
+    conn.close();
     break;
 
   case Message::Type::ADDRESS:
@@ -73,18 +81,24 @@ bool Binder::handleClientMessage(const Message& message, Connection& client) {
     //auto signature = FunctionSignature::deserialize(receivedMessage);
     //auto server = getServer(signature);
     //connection.send(messageType, server.serialize());
-    client.close();
+    conn.close();
     break;
 
   case Message::Type::SERVER_REGISTRATION:
+  {
     // This client is actually a server registering itself
     // Do not close the connection
-    servers.clients.emplace_back(std::move(client));
+    auto addr = ServerAddress::deserialize(message);
+    std::cerr << "Registering server "<<addr.hostname<<":"<<addr.port<<std::endl;
+    serverList.emplace_back(conn.socket, std::move(addr));
+
+    serverConnections.clients.emplace_back(std::move(conn));
     break;
+  }
 
   default:
     // Some invalid type
-    client.close();
+    conn.close();
     break;
   }
 
@@ -93,11 +107,20 @@ bool Binder::handleClientMessage(const Message& message, Connection& client) {
 }
 
 void Binder::run() {
-  server.addClientList(&clients);
-  server.addClientList(&servers);
+  socketServer.addClientList(&clientConnections);
+  socketServer.addClientList(&serverConnections);
 
-  if (!server.serve()) {
+  if (!socketServer.serve()) {
     std::cerr << "Errored out of serve routine." << std::endl;
   }
   return;
+}
+
+Server* Binder::getServer(int socket) {
+  for (auto& server : serverList) {
+    if (server.socket == socket) {
+      return &server;
+    }
+  }
+  return nullptr;
 }
