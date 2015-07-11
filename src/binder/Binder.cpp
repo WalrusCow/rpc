@@ -81,6 +81,12 @@ bool Binder::handleClientMessage(const Message& message, Connection& conn) {
     // Client wanting server address
     auto signature = FunctionSignature::deserialize(message);
     Server* server = getServer(signature);
+    if (server == nullptr) {
+      // lol
+      conn.close();
+      break;
+    }
+    std::cerr << "Retrieved the server" << std::endl;
     conn.send(Message::Type::ADDRESS, server->address.serialize());
     conn.close();
     break;

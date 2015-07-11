@@ -77,7 +77,9 @@ int Connection::doRead(
     ss.clear();
     const uint32_t readSz = sizeof(bytesToRead) + sizeof(messageType);
     // We have to read the messagelength
+    std::cerr << "Waiting to read "<<std::endl;
     bytesReceived = reader(socket, buffer, readSz);
+    std::cerr << "Initially read " << bytesReceived << " bytes" << std::endl;
     if (bytesReceived == 0) {
       // TODO: Closed!?
       return -2;
@@ -98,10 +100,13 @@ int Connection::doRead(
     return 1;
   }
 
+  std::cerr << "Have " << bytesToRead << " to read" << std::endl;
+
   do {
     // Read as much as we can
     uint32_t bytesToLoad = std::min(BUFFER_LEN, bytesToRead);
     bytesReceived = reader(socket, buffer, bytesToLoad);
+    std::cerr << "Just read " << bytesReceived << " bytes" << std::endl;
     if (bytesReceived < 0) {
       // Error in reading
       return -1;

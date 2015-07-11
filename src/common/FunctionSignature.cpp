@@ -40,7 +40,7 @@ FunctionSignature FunctionSignature::deserialize(const Message& message) {
   return FunctionSignature(std::move(name), std::move(argTypes));
 }
 
-std::string FunctionSignature::serialize() {
+std::string FunctionSignature::serialize() const {
   std::stringstream ss;
   ss << name;
   ss << '\0';
@@ -72,6 +72,15 @@ size_t FunctionSignature::getDataSize() const {
   }
   return dataSize;
 }
+
+size_t FunctionSignature::getArgSize(size_t idx) const {
+  return getTypeSize(argTypes[idx]);
+}
+
+size_t FunctionSignature::numArgs() const {
+  return argTypes.size();
+}
+
 
 size_t FunctionSignature::getTypeSize(int type) const {
   switch ((type & TYPE_BITS) >> 16) {
