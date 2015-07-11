@@ -77,12 +77,14 @@ bool Binder::handleClientMessage(const Message& message, Connection& conn) {
     break;
 
   case Message::Type::ADDRESS:
+  {
     // Client wanting server address
-    //auto signature = FunctionSignature::deserialize(receivedMessage);
-    //auto server = getServer(signature);
-    //connection.send(messageType, server.serialize());
+    auto signature = FunctionSignature::deserialize(message);
+    Server* server = getServer(signature);
+    conn.send(Message::Type::ADDRESS, server->address.serialize());
     conn.close();
     break;
+  }
 
   case Message::Type::SERVER_REGISTRATION:
   {
@@ -121,6 +123,23 @@ Server* Binder::getServer(int socket) {
     if (server.socket == socket) {
       return &server;
     }
+  }
+  return nullptr;
+}
+
+Server* Binder::getServer(const FunctionSignature& signature) {
+  // Get next server to respond to this signature
+  auto it = serverList.begin();
+  while (it != serverList.end()) {
+    auto& server = *it;
+    for (auto& sig : server.signatures) {
+      if (sig == signature) {
+        // This is the one: move it to the back
+        serverList.splice(serverList.end(), serverList, it);
+        return &serverList.back();
+      }
+    }
+    it++;
   }
   return nullptr;
 }

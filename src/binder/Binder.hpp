@@ -40,4 +40,5 @@ class Binder {
   bool handleServerMessage(const Message& message, Connection& conn);
 
   Server* getServer(int socket);
+  Server* getServer(const FunctionSignature& signature);
 };
