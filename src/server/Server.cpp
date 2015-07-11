@@ -56,14 +56,15 @@ bool Server::run() {
 int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
   bool warning = false;
   FunctionSignature signature(name, argTypes);
-  for (const auto& function : registeredFunctions) {
+  // Used if we have the same signature as an existing function (overwrite)
+  ServerFunction* oldFunction = nullptr;
+  for (auto& function : registeredFunctions) {
     if (function.signature == signature) {
       warning = true;
+      oldFunction = &function;
       break;
     }
   }
-
-  registeredFunctions.emplace_back(signature, f);
 
   // Now send to binder
   if (!binderConnection->send(
@@ -72,13 +73,20 @@ int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
     return -1;
   }
 
+  if (oldFunction) {
+    *oldFunction = ServerFunction(signature, f);
+  }
+  else {
+    registeredFunctions.emplace_back(signature, f);
+  }
+
   return warning ? 1 : 0;
 }
 
 bool Server::handleMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::CALL:
-    // Call shit now
+    // Call me maybe...
     break;
 
   default:
@@ -94,6 +102,7 @@ bool Server::handleBinderMessage(const Message& message, Connection& conn) {
   if (message.type == Message::Type::TERMINATION) {
     // terminate
     // TODO : May need thread cleanup, etc
+    conn.close();
     server.stop();
     return true;
   }

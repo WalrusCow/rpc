@@ -15,9 +15,15 @@ class FunctionSignature {
 
   bool operator==(const FunctionSignature& other) const;
 
+  size_t getDataSize() const;
+
  public:
   // Lower bits are for the array size
-  static const uint32_t ARR_BITS;
+  static const int ARR_BITS;
+  static const int TYPE_BITS;
   std::string name;
   std::vector<int> argTypes;
+
+ private:
+  size_t getTypeSize(int type) const;
 };
