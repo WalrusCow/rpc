@@ -10,12 +10,10 @@ FunctionCall::FunctionCall(
     : signature(std::move(signature_)),
       dataContainer(data.begin(), data.end()) {
   // Check for sanity...
-  std::cerr << "Data container: " << dataContainer.size()
+  std::cerr << "string: Data container: " << dataContainer.size()
             << " Signature size: " << signature.getDataSize() << std::endl;
   copyArgPointers();
 }
-
-
 
 FunctionCall::FunctionCall(FunctionSignature&& signature_, void** data)
     : signature(std::move(signature_)) {
@@ -31,7 +29,7 @@ FunctionCall::FunctionCall(FunctionSignature&& signature_, void** data)
     }
   }
 
-  std::cerr << "Data container: " << dataContainer.size()
+  std::cerr << "voids Data container: " << dataContainer.size()
             << " Signature size: " << signature.getDataSize() << std::endl;
   copyArgPointers();
 }
@@ -71,8 +69,8 @@ std::string FunctionCall::serialize() const {
 }
 
 void FunctionCall::writeDataTo(void** out) {
-  // Write shit to hurr
   size_t sizeSoFar = 0;
+
   for (size_t i = 0; i < signature.numArgs(); ++i) {
     // Amount to copy
     size_t sz = signature.getArgSize(i);

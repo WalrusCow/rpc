@@ -92,7 +92,10 @@ size_t FunctionSignature::getDataSize() const {
 }
 
 size_t FunctionSignature::getArgSize(size_t idx) const {
-  return getTypeSize(argTypes[idx]);
+  int type = argTypes[idx];
+  size_t arrSize = type & ARR_BITS;
+  if (arrSize == 0) arrSize = 1; // Not an array: one value
+  return arrSize * getTypeSize(type);
 }
 
 size_t FunctionSignature::numArgs() const {
