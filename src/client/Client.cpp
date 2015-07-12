@@ -103,3 +103,12 @@ int Client::rpcCall(const std::string& fun, int* argTypes, void** args) const {
   callReturn.writeDataTo(args);
   return 0;
 }
+
+int Client::terminate() const {
+  int sfd = connectTo(binderHost, binderPort);
+  if (sfd < 0) {
+    return sfd;
+  }
+  Connection conn(sfd);
+  return conn.send(Message::Type::TERMINATION, "");
+}

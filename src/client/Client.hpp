@@ -15,6 +15,7 @@ class Client {
  public:
   Client();
   int rpcCall(const std::string& fun, int* argTypes, void** args) const;
+  int terminate() const;
 
  private:
   std::string binderHost;

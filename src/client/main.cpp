@@ -9,3 +9,7 @@ namespace {
 extern "C" int rpcCall(char* name, int* argTypes, void** args) {
   return client.rpcCall(name, argTypes, args);
 }
+
+extern "C" int rpcTerminate() {
+  return client.terminate();
+}

@@ -107,7 +107,12 @@ bool Server::handleMessage(const Message& message, Connection& conn) {
     }
     int* argTypes = functionCall.signature.getArgTypes();
     void** args = functionCall.getArgArray();
-    function->function(argTypes, args);
+    int ret = function->function(argTypes, args);
+    if (ret < 0) {
+      // Error lol
+      conn.close();
+      break;
+    }
     functionCall = FunctionCall(std::move(functionCall.signature), args);
     conn.send(Message::Type::CALL, functionCall.serialize());
     break;
