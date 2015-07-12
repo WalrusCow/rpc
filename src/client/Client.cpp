@@ -59,7 +59,11 @@ int Client::connectToServer(const FunctionSignature& signature) const {
   binderConnection.send(Message::Type::ADDRESS, signature.serialize());
   // Read the response for the server address
   Message message;
-  binderConnection.read(&message);
+  if (binderConnection.read(&message) < 0 ||
+      message.type != Message::Type::ADDRESS) {
+    binderConnection.close();
+    return -1;
+  }
   binderConnection.close();
   // Okay, now we have the message with the server address
   auto serverAddress = ServerAddress::deserialize(message);
@@ -96,6 +100,11 @@ int Client::rpcCall(const std::string& fun, int* argTypes, void** args) const {
       conn.close();
       break;
     }
+  }
+
+  if (message.type != Message::Type::CALL) {
+    // Error
+    return -1;
   }
 
   // Now we must deserialize the message
