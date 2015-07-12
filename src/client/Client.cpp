@@ -24,7 +24,6 @@ int Client::connectTo(const std::string& host, int port) const {
   }
 
   if (connect(sfd, (struct sockaddr*)&addr, sizeof(addr)) < 0) {
-    std::cerr << "Connect failed" << std::endl;
     return -1;
   }
   return sfd;
@@ -49,7 +48,6 @@ Client::Client() {
 int Client::connectToServer(const FunctionSignature& signature) const {
   int binderSocket = connectTo(binderHost, binderPort);
   if (binderSocket < 0) {
-    std::cerr << "Could not get binder socker" << std::endl;
     return binderSocket;
   }
   Connection binderConnection(binderSocket);
@@ -72,10 +70,8 @@ int Client::rpcCall(const std::string& fun, int* argTypes, void** args) const {
   FunctionSignature signature(fun, argTypes);
   int serverSocket = connectToServer(signature);
   if (serverSocket < 0) {
-    std::cerr << "Could not connect to server" << std::endl;
     return serverSocket;
   }
-  std::cerr << "Connected to the server" << std::endl;
 
   Connection conn(serverSocket);
 
@@ -84,25 +80,19 @@ int Client::rpcCall(const std::string& fun, int* argTypes, void** args) const {
     conn.close();
     return -1;
   }
-  std::cerr << "Sent to the server" << std::endl;
 
   Message message;
   while (true) {
-    std::cerr << "About to read" <<std::endl;
     int r = conn.read(&message);
-    std::cerr << "Read here" << std::endl;
     if (r < 0) {
-      std::cerr << "Error from reading" << std::endl;
       conn.close();
       return -1;
     }
     else if (r > 0) {
       // Done
-      std::cerr << "Read it all" << std::endl;
       conn.close();
       break;
     }
-    std::cerr << "Did not yet read all of it..." << std::endl;
   }
 
   // Now we must deserialize the message
