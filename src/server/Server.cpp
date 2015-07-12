@@ -39,7 +39,23 @@ bool Server::connectToBinder() {
   int success = binderConnection->send(
       Message::Type::SERVER_REGISTRATION,
       serverAddress.serialize());
-  return success == 0;
+  if (success < 0) {
+    std::cerr<<"registration send not success"<<std::endl;
+    return false;
+  }
+  Message message;
+  if (binderConnection->read(&message) < 0) {
+    // Error in reading
+    std::cerr << "error reading registeration"<<std::endl;
+    return false;
+  }
+  if (message.type != Message::Type::SERVER_REGISTRATION) {
+    // Error from binder
+    binderConnection->close();
+    std::cerr << "Bad msg type from registration"<<std::endl;
+    return false;
+  }
+  return true;
 }
 
 bool Server::connect() {
@@ -55,6 +71,12 @@ bool Server::run() {
   server.addClientList(&clients);
   server.addClientList(&binderClientList);
   if (binderConnection->send(Message::Type::SERVER_READY, "") < 0) {
+    return false;
+  }
+  Message message;
+  if (binderConnection->read(&message) < 0 ||
+      message.type != Message::Type::SERVER_READY) {
+    binderConnection->close();
     return false;
   }
 
@@ -79,6 +101,16 @@ int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
   if (binderConnection->send(
       Message::Type::RPC_REGISTRATION, signature.serialize()) < 0) {
     // Error
+    std::cerr << "rpc reg Send not success" << std::endl;
+    return -1;
+  }
+  Message message;
+  if (binderConnection->read(&message) < 0) {
+    std::cerr << "rpc reg read fail" << std::endl;
+    return -1;
+  }
+  if (message.type != Message::Type::RPC_REGISTRATION) {
+    std::cerr << "rpc reg msg type bad " << std::endl;
     return -1;
   }
 
@@ -133,7 +165,6 @@ Server::ServerFunction* Server::getFunction(
 }
 
 void Server::handleCall(const Message& message, Connection& conn) {
-  // TODO: Put this in a damn function
   // Call me maybe...
   auto functionCall = FunctionCall::deserialize(message);
   ServerFunction* function = getFunction(functionCall.signature);

@@ -1,10 +1,11 @@
 #include "rpc.h"
 #include "server_function_skels.h"
+#include <iostream>
 
 int main(int argc, char *argv[]) {
   
   /* create sockets and connect to the binder */
-  rpcInit();
+  std::cerr<< "rpcInit: " <<rpcInit() << std::endl;
 
   /* prepare server functions' signatures */
   int count0 = 3;
@@ -52,14 +53,14 @@ int main(int argc, char *argv[]) {
   /* 
    * register server functions f0~f4
    */
-  rpcRegister("f0", argTypes0, *f0_Skel);
-  rpcRegister("f1", argTypes1, *f1_Skel);
-  rpcRegister("f2", argTypes2, *f2_Skel);
-  rpcRegister("f3", argTypes3, *f3_Skel);
-  rpcRegister("f4", argTypes4, *f4_Skel);
+  std::cerr << "RPc register: " <<rpcRegister("f0", argTypes0, *f0_Skel)<<std::endl;;
+  std::cerr << "RPc register: " <<rpcRegister("f1", argTypes1, *f1_Skel)<<std::endl;;
+  std::cerr << "RPc register: " <<rpcRegister("f2", argTypes2, *f2_Skel)<<std::endl;;
+  std::cerr << "RPc register: " <<rpcRegister("f3", argTypes3, *f3_Skel)<<std::endl;;
+  std::cerr << "RPc register: " <<rpcRegister("f4", argTypes4, *f4_Skel)<<std::endl;;
 
   /* call rpcExecute */
-  rpcExecute();
+  std::cerr<<"rpc execute "<<rpcExecute() <<std::endl;
 
   /* return */
   return 0;

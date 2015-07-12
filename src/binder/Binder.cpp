@@ -112,11 +112,12 @@ Server* Binder::getServer(const FunctionSignature& signature) {
 
 void Binder::handleServerReady(const Message& message, Connection& conn) {
   Server* server = getServer(conn.socket);
-  //TODO
   if (server == nullptr) {
     // No matching server is found here
-    conn.send(Message::Type::INVALID, "");
+    conn.close();
+    return;
   }
+  conn.send(Message::Type::SERVER_READY, "");
   server->ready = true;
 }
 
@@ -124,9 +125,13 @@ void Binder::handleRpcRegistration(const Message& message, Connection& conn) {
   // Function registration
   // Now see if we have this signature already in here?
   Server* server = getServer(conn.socket);
-  //TODO
-  //if (server == nullptr)
+  if (server == nullptr) {
+    // No matching server is found here
+    conn.close();
+    return;
+  }
   server->signatures.emplace_back(FunctionSignature::deserialize(message));
+  conn.send(Message::Type::RPC_REGISTRATION, "");
 }
 
 void Binder::handleTermination(const Message& message, Connection& conn) {
@@ -147,7 +152,7 @@ void Binder::handleGetAddress(const Message& message, Connection& conn) {
   auto signature = FunctionSignature::deserialize(message);
   Server* server = getServer(signature);
   if (server == nullptr) {
-    // lol
+    // lol, close it on the client
     conn.close();
     return;
   }
@@ -165,6 +170,7 @@ void Binder::handleServerRegistration(
   serverList.emplace_back(conn.socket, std::move(addr));
 
   serverConnections.clients.emplace_back(std::move(conn));
+  conn.send(Message::Type::SERVER_REGISTRATION, "");
 }
 
 void Binder::handleServerClose(const Message& message, Connection& conn) {
