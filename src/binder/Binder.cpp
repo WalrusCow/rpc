@@ -41,7 +41,7 @@ bool Binder::handleServerMessage(const Message& message, Connection& conn) {
     return false;
 
   default:
-    conn.close();
+    handleServerClose(message, conn);
     return true;
   }
 }
@@ -97,7 +97,9 @@ Server* Binder::getServer(const FunctionSignature& signature) {
     for (auto& sig : server.signatures) {
       if (sig == signature) {
         // This is the one: move it to the back
-        serverList.splice(serverList.end(), serverList, it);
+        Server newS(std::move(server));
+        serverList.erase(it);
+        serverList.emplace_back(std::move(newS));
         return &serverList.back();
       }
     }
@@ -160,4 +162,17 @@ void Binder::handleServerRegistration(
   serverList.emplace_back(conn.socket, std::move(addr));
 
   serverConnections.clients.emplace_back(std::move(conn));
+}
+
+void Binder::handleServerClose(const Message& message, Connection& conn) {
+  // Close the connection and remove from our bookkeeping
+  conn.close();
+  auto it = serverList.begin();
+  while (it != serverList.end()) {
+    if (it->socket == conn.socket) {
+      serverList.erase(it);
+      return;
+    }
+    it++;
+  }
 }

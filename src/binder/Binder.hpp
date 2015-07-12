@@ -47,4 +47,5 @@ class Binder {
   void handleTermination(const Message& message, Connection& conn);
   void handleGetAddress(const Message& message, Connection& conn);
   void handleServerRegistration(const Message& message, Connection& conn);
+  void handleServerClose(const Message& message, Connection& conn);
 };
