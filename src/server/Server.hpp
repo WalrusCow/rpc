@@ -67,4 +67,6 @@ class Server {
 
   // Check if the binder has requested termination
   bool terminationRequested();
+
+  void handleCall(const Message& message, Connection& conn);
 };

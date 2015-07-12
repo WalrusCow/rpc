@@ -41,4 +41,10 @@ class Binder {
 
   Server* getServer(int socket);
   Server* getServer(const FunctionSignature& signature);
+
+  void handleServerReady(const Message& message, Connection& conn);
+  void handleRpcRegistration(const Message& message, Connection& conn);
+  void handleTermination(const Message& message, Connection& conn);
+  void handleGetAddress(const Message& message, Connection& conn);
+  void handleServerRegistration(const Message& message, Connection& conn);
 };

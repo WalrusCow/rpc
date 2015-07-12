@@ -33,26 +33,12 @@ void Binder::connect() {
 bool Binder::handleServerMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::SERVER_READY:
-  {
-    Server* server = getServer(conn.socket);
-    //TODO
-    //if (server == nullptr) {
-      // Shitttah!
-    //}
-    server->ready = true;
+    handleServerReady(message, conn);
     return false;
-  }
 
   case Message::Type::RPC_REGISTRATION:
-  {
-    // Function registration
-    // Now see if we have this signature already in here?
-    Server* server = getServer(conn.socket);
-    //TODO
-    //if (server == nullptr)
-    server->signatures.emplace_back(FunctionSignature::deserialize(message));
+    handleRpcRegistration(message, conn);
     return false;
-  }
 
   default:
     conn.close();
@@ -63,45 +49,16 @@ bool Binder::handleServerMessage(const Message& message, Connection& conn) {
 bool Binder::handleClientMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::TERMINATION:
-    // We must terminate all servers
-    for (auto& server : serverConnections.clients) {
-      server.send(Message::Type::TERMINATION, "");
-      server.close();
-    }
-    serverConnections.clients.clear();
-    // All done
-    socketServer.stop();
-
-    conn.close();
+    handleTermination(message, conn);
     break;
 
   case Message::Type::ADDRESS:
-  {
-    // Client wanting server address
-    auto signature = FunctionSignature::deserialize(message);
-    Server* server = getServer(signature);
-    if (server == nullptr) {
-      // lol
-      conn.close();
-      break;
-    }
-    std::cerr << "Retrieved the server" << std::endl;
-    conn.send(Message::Type::ADDRESS, server->address.serialize());
-    conn.close();
+    handleGetAddress(message, conn);
     break;
-  }
 
   case Message::Type::SERVER_REGISTRATION:
-  {
-    // This client is actually a server registering itself
-    // Do not close the connection
-    auto addr = ServerAddress::deserialize(message);
-    std::cerr << "Registering server "<<addr.hostname<<":"<<addr.port<<std::endl;
-    serverList.emplace_back(conn.socket, std::move(addr));
-
-    serverConnections.clients.emplace_back(std::move(conn));
+    handleServerRegistration(message, conn);
     break;
-  }
 
   default:
     // Some invalid type
@@ -147,4 +104,60 @@ Server* Binder::getServer(const FunctionSignature& signature) {
     it++;
   }
   return nullptr;
+}
+
+void Binder::handleServerReady(const Message& message, Connection& conn) {
+  Server* server = getServer(conn.socket);
+  //TODO
+  //if (server == nullptr) {
+    // Shitttah!
+  //}
+  server->ready = true;
+}
+
+void Binder::handleRpcRegistration(const Message& message, Connection& conn) {
+  // Function registration
+  // Now see if we have this signature already in here?
+  Server* server = getServer(conn.socket);
+  //TODO
+  //if (server == nullptr)
+  server->signatures.emplace_back(FunctionSignature::deserialize(message));
+}
+
+void Binder::handleTermination(const Message& message, Connection& conn) {
+  // We must terminate all servers
+  for (auto& server : serverConnections.clients) {
+    server.send(Message::Type::TERMINATION, "");
+    server.close();
+  }
+  serverConnections.clients.clear();
+  // All done
+  socketServer.stop();
+
+  conn.close();
+}
+
+void Binder::handleGetAddress(const Message& message, Connection& conn) {
+  // Client wanting server address
+  auto signature = FunctionSignature::deserialize(message);
+  Server* server = getServer(signature);
+  if (server == nullptr) {
+    // lol
+    conn.close();
+    return;
+  }
+  std::cerr << "Retrieved the server" << std::endl;
+  conn.send(Message::Type::ADDRESS, server->address.serialize());
+  conn.close();
+}
+
+void Binder::handleServerRegistration(
+    const Message& message, Connection& conn) {
+  // This client is actually a server registering itself
+  // Do not close the connection
+  auto addr = ServerAddress::deserialize(message);
+  std::cerr << "Registering server "<<addr.hostname<<":"<<addr.port<<std::endl;
+  serverList.emplace_back(conn.socket, std::move(addr));
+
+  serverConnections.clients.emplace_back(std::move(conn));
 }

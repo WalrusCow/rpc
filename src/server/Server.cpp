@@ -95,27 +95,8 @@ int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
 bool Server::handleMessage(const Message& message, Connection& conn) {
   switch (message.type) {
   case Message::Type::CALL:
-  {
-    // TODO: Put this in a damn function
-    // Call me maybe...
-    auto functionCall = FunctionCall::deserialize(message);
-    ServerFunction* function = getFunction(functionCall.signature);
-    if (function == nullptr) {
-      conn.close();
-      break;
-    }
-    int* argTypes = functionCall.signature.getArgTypes();
-    void** args = functionCall.getArgArray();
-    int ret = function->function(argTypes, args);
-    if (ret < 0) {
-      // Error lol
-      conn.close();
-      break;
-    }
-    functionCall = FunctionCall(std::move(functionCall.signature), args);
-    conn.send(Message::Type::CALL, functionCall.serialize());
+    handleCall(message, conn);
     break;
-  }
 
   default:
     // Some invalid type
@@ -149,4 +130,25 @@ Server::ServerFunction* Server::getFunction(
     }
   }
   return nullptr;
+}
+
+void Server::handleCall(const Message& message, Connection& conn) {
+  // TODO: Put this in a damn function
+  // Call me maybe...
+  auto functionCall = FunctionCall::deserialize(message);
+  ServerFunction* function = getFunction(functionCall.signature);
+  if (function == nullptr) {
+    conn.close();
+    return;
+  }
+  int* argTypes = functionCall.signature.getArgTypes();
+  void** args = functionCall.getArgArray();
+  int ret = function->function(argTypes, args);
+  if (ret < 0) {
+    // Error lol
+    conn.close();
+    return;
+  }
+  functionCall = FunctionCall(std::move(functionCall.signature), args);
+  conn.send(Message::Type::CALL, functionCall.serialize());
 }
