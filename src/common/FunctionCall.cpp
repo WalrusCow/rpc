@@ -46,12 +46,27 @@ FunctionCall FunctionCall::deserialize(const Message& message) {
   std::string msgCopy = message.message;
   msgCopy.erase(0, bytesRead);
 
+  std::cerr<<std::hex<<"Function call deserialized: ";
+  for (char c : msgCopy) {
+    int x = ((int)c) & 0xff;
+    std::cerr << x << ' ';
+  }
+  std::cerr<<std::dec<<std::endl;
   return FunctionCall(std::move(signature), msgCopy);
 }
 
 std::string FunctionCall::serialize() const {
   std::stringstream ss;
+  ss << signature.serialize();
   ss.write((const char*) dataContainer.data(), dataContainer.size());
+  std::cerr<<"Serialized function call: ";
+  std::string k = ss.str();
+  std::cerr<<std::hex;
+  for (char c : k) {
+    int i = ((int)c)&0xff;
+    std::cerr<<i<<' ';
+  }
+  std::cerr<<std::dec<<std::endl;
   return ss.str();
 }
 

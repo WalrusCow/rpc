@@ -32,7 +32,7 @@ void Connection::close() {
 
 int Connection::send(Message::Type type, const std::string& str) {
   // NOTE: Send length does not include type size
-  uint32_t length = str.size() + 1;
+  uint32_t length = str.size();
   char buffer[BUFFER_LEN];
 
   // Add length and type to the message
@@ -77,9 +77,7 @@ int Connection::doRead(
     ss.clear();
     const uint32_t readSz = sizeof(bytesToRead) + sizeof(messageType);
     // We have to read the messagelength
-    std::cerr << "Waiting to read "<<std::endl;
     bytesReceived = reader(socket, buffer, readSz);
-    std::cerr << "Initially read " << bytesReceived << " bytes" << std::endl;
     if (bytesReceived == 0) {
       // TODO: Closed!?
       return -2;
@@ -100,13 +98,10 @@ int Connection::doRead(
     return 1;
   }
 
-  std::cerr << "Have " << bytesToRead << " to read" << std::endl;
-
   do {
     // Read as much as we can
     uint32_t bytesToLoad = std::min(BUFFER_LEN, bytesToRead);
     bytesReceived = reader(socket, buffer, bytesToLoad);
-    std::cerr << "Just read " << bytesReceived << " bytes" << std::endl;
     if (bytesReceived < 0) {
       // Error in reading
       return -1;
