@@ -3,15 +3,11 @@
 #include <cstring>
 #include <sstream>
 
-#include <iostream>
-
 FunctionCall::FunctionCall(
     FunctionSignature&& signature_, const std::string& data)
     : signature(std::move(signature_)),
       dataContainer(data.begin(), data.end()) {
   // Check for sanity...
-  std::cerr << "string: Data container: " << dataContainer.size()
-            << " Signature size: " << signature.getDataSize() << std::endl;
   copyArgPointers();
 }
 
@@ -29,8 +25,6 @@ FunctionCall::FunctionCall(FunctionSignature&& signature_, void** data)
     }
   }
 
-  std::cerr << "voids Data container: " << dataContainer.size()
-            << " Signature size: " << signature.getDataSize() << std::endl;
   copyArgPointers();
 }
 
@@ -44,12 +38,6 @@ FunctionCall FunctionCall::deserialize(const Message& message) {
   std::string msgCopy = message.message;
   msgCopy.erase(0, bytesRead);
 
-  std::cerr<<std::hex<<"Function call deserialized: ";
-  for (char c : msgCopy) {
-    int x = ((int)c) & 0xff;
-    std::cerr << x << ' ';
-  }
-  std::cerr<<std::dec<<std::endl;
   return FunctionCall(std::move(signature), msgCopy);
 }
 
@@ -57,14 +45,6 @@ std::string FunctionCall::serialize() const {
   std::stringstream ss;
   ss << signature.serialize();
   ss.write((const char*) dataContainer.data(), dataContainer.size());
-  std::cerr<<"Serialized function call: ";
-  std::string k = ss.str();
-  std::cerr<<std::hex;
-  for (char c : k) {
-    int i = ((int)c)&0xff;
-    std::cerr<<i<<' ';
-  }
-  std::cerr<<std::dec<<std::endl;
   return ss.str();
 }
 

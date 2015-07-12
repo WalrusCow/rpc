@@ -67,9 +67,6 @@ int Client::connectToServer(const FunctionSignature& signature) const {
   binderConnection.close();
   // Okay, now we have the message with the server address
   auto serverAddress = ServerAddress::deserialize(message);
-  std::cerr << "Got server address " << serverAddress.hostname
-            << ":" << serverAddress.port << std::endl;
-
   return connectTo(serverAddress.hostname, serverAddress.port);
 }
 
@@ -110,8 +107,6 @@ int Client::rpcCall(const std::string& fun, int* argTypes, void** args) const {
   // Now we must deserialize the message
   auto callReturn = FunctionCall::deserialize(message);
   // Got the response back
-  std::cerr << "Got call response. Signatures equal? "
-            << (callReturn.signature == functionCall.signature) << std::endl;
   callReturn.writeDataTo(args);
   return 0;
 }

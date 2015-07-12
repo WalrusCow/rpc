@@ -1,7 +1,6 @@
 #include "common/FunctionSignature.hpp"
 
 #include <sstream>
-#include <iostream>
 
 #include "rpc.h"
 
@@ -37,14 +36,6 @@ FunctionSignature FunctionSignature::deserialize(const Message& message) {
   while (*typePointer) {
     argTypes.push_back(*typePointer++);
   }
-
-  std::cerr << "Function signature deserialized " << name << " " << std::hex;
-  for (int i : argTypes) {
-    std::cerr << i << ' ';
-  }
-  std::cerr<<std::dec<<std::endl;
-
-
   return FunctionSignature(std::move(name), std::move(argTypes));
 }
 
@@ -57,14 +48,6 @@ std::string FunctionSignature::serialize() const {
   }
   int end = 0;
   ss.write((char*) &end, sizeof(end));
-  std::cerr<<"Serialized function signature: ";
-  std::string k = ss.str();
-  std::cerr<<std::hex;
-  for (char c : k) {
-    int i = ((int)c)&0xff;
-    std::cerr<<i<<' ';
-  }
-  std::cerr<<std::dec<<std::endl;
   return ss.str();
 }
 

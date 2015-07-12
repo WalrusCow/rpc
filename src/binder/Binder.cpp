@@ -75,7 +75,7 @@ void Binder::run() {
   socketServer.addClientList(&serverConnections);
 
   if (!socketServer.serve()) {
-    std::cerr << "Errored out of serve routine." << std::endl;
+    //std::cerr << "Errored out of serve routine." << std::endl;
   }
   return;
 }
@@ -156,7 +156,6 @@ void Binder::handleGetAddress(const Message& message, Connection& conn) {
     conn.close();
     return;
   }
-  std::cerr << "Retrieved the server" << std::endl;
   conn.send(Message::Type::ADDRESS, server->address.serialize());
   conn.close();
 }
@@ -166,7 +165,6 @@ void Binder::handleServerRegistration(
   // This client is actually a server registering itself
   // Do not close the connection
   auto addr = ServerAddress::deserialize(message);
-  std::cerr << "Registering server "<<addr.hostname<<":"<<addr.port<<std::endl;
   serverList.emplace_back(conn.socket, std::move(addr));
 
   serverConnections.clients.emplace_back(std::move(conn));

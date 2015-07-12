@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <cstring>
-#include <iostream>
 
 #include <arpa/inet.h>
 #include <netinet/in.h>
@@ -16,14 +15,11 @@ Connection::Connection(int socket_) : socket(socket_) {
   socklen_t sz = sizeof(peerAddr);
   if (getpeername(socket, (struct sockaddr*) &peerAddr, &sz) < 0) {
     // Failure...
-    std::cerr << "Failed to retrieve peer address from socket" << std::endl;
     return;
   }
 
   hostname = inet_ntoa(peerAddr.sin_addr);
   port = ntohs(peerAddr.sin_port);
-  std::cerr << "Created connection for socket " << socket << " on "
-            << hostname << ":" << port << std::endl;
 }
 
 void Connection::close() {

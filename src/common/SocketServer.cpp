@@ -1,6 +1,5 @@
 #include "common/SocketServer.hpp"
 
-#include <iostream>
 #include <unistd.h>
 #include <sys/select.h>
 #include <sys/socket.h>
@@ -73,7 +72,6 @@ void SocketServer::checkForNewConnections() {
   auto newSocket = accept(mainSocket, (struct sockaddr*)&sin, &sinLen);
   if (newSocket < 0) {
     // Error, but not fatal
-    std::cerr << "Error accepting new socket" << std::endl;
   }
   // Add to first list (default list) (?)
   clientLists.front()->clients.emplace_back(newSocket);
@@ -86,7 +84,6 @@ bool SocketServer::getMessage(Connection& connection, Message* message) {
 
   int finished = connection.read(message);
   if (finished < 0) {
-    std::cerr << "Error on reading" << std::endl;
     message->type = Message::Type::INVALID;
     return true;
   }
