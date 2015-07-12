@@ -74,6 +74,12 @@ bool FunctionSignature::operator==(const FunctionSignature& other) const {
   }
 
   for (size_t i = 0; i < argTypes.size(); ++i) {
+    if (!!(argTypes[i] & ARR_BITS) != !!(other.argTypes[i] & ARR_BITS)) {
+      // If one type is an array and the other isn't then not equal
+      return false;
+    }
+    // Now compare without the array bits (since the two types are either both
+    // arrays or both or not)
     if ((argTypes[i] & ~ARR_BITS) != (other.argTypes[i] & ~ARR_BITS)) {
       return false;
     }
