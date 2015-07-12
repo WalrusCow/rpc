@@ -1,10 +1,10 @@
 #include "common/SocketServer.hpp"
 
 #include <iostream>
+#include <unistd.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-#include <unistd.h>
 
 void SocketServer::addClientList(SocketServer::ClientList* clientList) {
   clientLists.push_back(clientList);

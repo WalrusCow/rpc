@@ -1,6 +1,6 @@
 #include "client/Client.hpp"
 
-#include <unistd.h>
+#include <cstring>
 #include <iostream>
 
 #include "common/FunctionCall.hpp"
@@ -12,10 +12,13 @@ int Client::connectTo(const std::string& host, int port) const {
   struct sockaddr_in addr;
 
   server = gethostbyname(host.c_str());
+  if (server == nullptr) {
+    return -1;
+  }
   addr.sin_family = AF_INET;
-  bcopy((char*)server->h_addr,
-        (char*)&addr.sin_addr.s_addr,
-        (int)server->h_length);
+  std::memcpy((char*)&addr.sin_addr.s_addr,
+              (char*)server->h_addr,
+              (int)server->h_length);
   addr.sin_port = htons(port);
 
   int sfd = socket(AF_INET, SOCK_STREAM, 0);

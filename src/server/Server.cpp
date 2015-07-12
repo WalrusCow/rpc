@@ -1,7 +1,6 @@
 #include "server/Server.hpp"
 
 #include <iostream>
-#include <unistd.h>
 
 #include "common/FunctionCall.hpp"
 
@@ -21,9 +20,9 @@ bool Server::connectToBinder() {
   int binderPort = std::stoi(portStr);
   binderServer = gethostbyname(binderHostname);
   binderAddr.sin_family = AF_INET;
-  bcopy((char*)binderServer->h_addr,
-        (char*)&binderAddr.sin_addr.s_addr,
-        (int)binderServer->h_length);
+  std::memcpy((char*)&binderAddr.sin_addr.s_addr,
+              (char*)binderServer->h_addr,
+              (int)binderServer->h_length);
   binderAddr.sin_port = htons(binderPort);
 
   // Now connect to binder socket

@@ -4,3 +4,5 @@ client
 *.o
 *.a
 *.d
+given/s1
+given/c1
