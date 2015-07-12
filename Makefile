@@ -15,7 +15,7 @@ CPPFLAGS = -pedantic -Wall -Wextra -Wcast-align -Wcast-qual \
 -Wswitch-default -Wundef -Werror -Wno-unused
 CXXFLAGS = -Isrc $(CPPFLAGS) -W -Wall -g -std=c++1y
 
-LDFLAGS = $(shell pkg-config) -lpthread
+LDFLAGS = $(shell pkg-config)
 RPC = rpc
 BINDER = binder
 LIB = lib$(RPC).a

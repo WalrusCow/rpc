@@ -31,4 +31,7 @@ LINKING
 In order to link the program (for example, using the given source files),
 simply copy librpc.a into the directory with the source files and run
 
-g++ -L. SOURCE_FILE... -lrpc
+g++ -L. SOURCE_FILE... -lrpc -lpthread
+
+Note that the server is multithreaded and requires -lpthread to be linked
+as well. The client has no such requirement.
