@@ -24,7 +24,8 @@ void SocketServer::waitForActivity() {
   }
 
   if (select(maxFd + 1, &readSet, nullptr, nullptr, nullptr) < 0) {
-    // TODO: Error?
+    errored = true;
+    stop();
     return;
   }
 }
@@ -71,7 +72,7 @@ void SocketServer::checkForNewConnections() {
   // Activity on the main socket means that there is a new client
   auto newSocket = accept(mainSocket, (struct sockaddr*)&sin, &sinLen);
   if (newSocket < 0) {
-    // Error
+    // Error, but not fatal
     std::cerr << "Error accepting new socket" << std::endl;
   }
   // Add to first list (default list) (?)

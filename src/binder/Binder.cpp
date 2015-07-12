@@ -94,13 +94,15 @@ Server* Binder::getServer(const FunctionSignature& signature) {
   auto it = serverList.begin();
   while (it != serverList.end()) {
     auto& server = *it;
-    for (auto& sig : server.signatures) {
-      if (sig == signature) {
-        // This is the one: move it to the back
-        Server newS(std::move(server));
-        serverList.erase(it);
-        serverList.emplace_back(std::move(newS));
-        return &serverList.back();
+    if (server.ready) { // Only for servers that are ready to serve
+      for (auto& sig : server.signatures) {
+        if (sig == signature) {
+          // This is the one: move it to the back
+          Server newS(std::move(server));
+          serverList.erase(it);
+          serverList.emplace_back(std::move(newS));
+          return &serverList.back();
+        }
       }
     }
     it++;
@@ -111,9 +113,10 @@ Server* Binder::getServer(const FunctionSignature& signature) {
 void Binder::handleServerReady(const Message& message, Connection& conn) {
   Server* server = getServer(conn.socket);
   //TODO
-  //if (server == nullptr) {
-    // Shitttah!
-  //}
+  if (server == nullptr) {
+    // No matching server is found here
+    conn.send(Message::Type::INVALID, "");
+  }
   server->ready = true;
 }
 

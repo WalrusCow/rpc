@@ -79,7 +79,7 @@ int Connection::doRead(
     // We have to read the messagelength
     bytesReceived = reader(socket, buffer, readSz);
     if (bytesReceived == 0) {
-      // TODO: Closed!?
+      // Closed
       return -2;
     }
     if (bytesReceived < readSz) {
@@ -128,17 +128,3 @@ int Connection::read(Message* message) {
     return ::read(sfd, buffer, toRead);
   });
 }
-
-int Connection::recv(Message* message) {
-  return doRead(message, [&] (int sfd, char* buffer, size_t toRead) {
-      return ::recv(sfd, buffer, toRead, 0);
-  });
-}
-
-//void Connection::useSocket(int socket_) {
-//  socket = socket_;
-//  ss.str("");
-//  ss.clear();
-//  bytesToRead = 0;
-//  messageType = 0;
-//}

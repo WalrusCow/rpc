@@ -24,12 +24,8 @@ class Connection {
 
   // Return negative on error; positive on done; 0 on not done
   int read(Message* message);
-  int recv(Message* message);
 
   void close();
-
-  // TODO: Do we need this?
-  //void useSocket(int socket_);
 
   int socket;
   int port;
