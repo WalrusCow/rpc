@@ -30,6 +30,9 @@ class SocketServer {
 
   void addClientList(ClientList* clientList);
   void stop();
+  bool isStopped() {
+    return stopped;
+  }
 
  protected:
 

@@ -1,8 +1,7 @@
 #include "server/Server.hpp"
 
 #include <iostream>
-
-#include "common/FunctionCall.hpp"
+#include <thread>
 
 bool Server::connectToBinder() {
   char* binderHostname = getenv("BINDER_ADDRESS");
@@ -80,8 +79,18 @@ bool Server::run() {
     return false;
   }
 
-  // TODO: Join message handling threads
-  return server.serve();
+  std::list<std::thread> threadList;
+  for (size_t i = 0; i < numThreads; ++i) {
+    threadList.emplace_back([&] () {
+      threadWork();
+    });
+  }
+
+  int ret = server.serve();
+  for (auto& t : threadList) {
+    t.join();
+  }
+  return ret;
 }
 
 int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
@@ -141,8 +150,6 @@ bool Server::handleMessage(const Message& message, Connection& conn) {
 
 bool Server::handleBinderMessage(const Message& message, Connection& conn) {
   if (message.type == Message::Type::TERMINATION) {
-    // terminate
-    // TODO : May need thread cleanup, etc
     conn.close();
     server.stop();
     return true;
@@ -167,19 +174,43 @@ Server::ServerFunction* Server::getFunction(
 void Server::handleCall(const Message& message, Connection& conn) {
   // Call me maybe...
   auto functionCall = FunctionCall::deserialize(message);
-  ServerFunction* function = getFunction(functionCall.signature);
-  if (function == nullptr) {
-    conn.close();
-    return;
+  jobQueue.push({std::move(conn), std::move(functionCall)});
+}
+
+void Server::threadWork() {
+  // First, check if the queue is empty. If it is, then sleep for 500 ms
+  while (true) {
+    // Wait for a job in the queue or the server to stop
+    accessMutex.lock();
+    if (jobQueue.empty() && !server.isStopped()) {
+      accessMutex.unlock();
+      std::this_thread::sleep_for(std::chrono::milliseconds(500));
+      continue;
+    }
+    if (server.isStopped()) {
+      accessMutex.unlock();
+      return;
+    }
+
+    auto job = jobQueue.pop();
+    accessMutex.unlock();
+
+    ServerFunction* function = getFunction(job.functionCall.signature);
+    if (function == nullptr) {
+      job.connection.close();
+      return;
+    }
+
+    int* argTypes = job.functionCall.signature.getArgTypes();
+    void** args = job.functionCall.getArgArray();
+    int ret = function->function(argTypes, args);
+    if (ret < 0) {
+      // Error lol
+      job.connection.close();
+      return;
+    }
+    FunctionCall functionCall(std::move(functionCall.signature), args);
+    job.connection.send(Message::Type::CALL, functionCall.serialize());
+    job.connection.close();
   }
-  int* argTypes = functionCall.signature.getArgTypes();
-  void** args = functionCall.getArgArray();
-  int ret = function->function(argTypes, args);
-  if (ret < 0) {
-    // Error lol
-    conn.close();
-    return;
-  }
-  functionCall = FunctionCall(std::move(functionCall.signature), args);
-  conn.send(Message::Type::CALL, functionCall.serialize());
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <functional>
 #include <list>
 #include <string>
 
@@ -12,8 +13,10 @@
 #include "rpc.h"
 
 #include "common/Connection.hpp"
+#include "common/FunctionCall.hpp"
 #include "common/FunctionSignature.hpp"
 #include "common/SocketServer.hpp"
+#include "common/ThreadQueue.hpp"
 
 class Server {
  public:
@@ -25,6 +28,8 @@ class Server {
  private:
   SocketServer server;
   ServerAddress serverAddress;
+
+  const size_t numThreads = 5;
 
   struct hostent* binderServer;
   struct sockaddr_in binderAddr;
@@ -41,9 +46,6 @@ class Server {
     [&] (const Message& m, Connection& c) {
       return handleBinderMessage(m, c);
   };
-
-  // TODO: Thread pool to service requests?
-  //std::list<std::thread> pendingRequests;
 
   // Functions that we support
   struct ServerFunction {
@@ -69,4 +71,14 @@ class Server {
   bool terminationRequested();
 
   void handleCall(const Message& message, Connection& conn);
+
+  struct Job {
+    Job(Connection&& conn, FunctionCall&& fc)
+        : connection(std::move(conn)), functionCall(std::move(fc)) {}
+    Connection connection;
+    FunctionCall functionCall;
+  };
+  ThreadQueue<Job> jobQueue;
+  void threadWork();
+  std::mutex accessMutex;
 };
