@@ -1,1 +1,34 @@
-RPC library including binder, server and client
+Group members:
+  William McDonald (id: 20418145)
+  (There is no second group member.)
+
+=========
+COMPILING
+=========
+
+make
+
+The `make` command generates librpc.a and an executable named `binder`
+
+This requires no external dependencies, but should be compiled with gcc version
+4.8 or later (already installed on student.linux.uwaterloo.ca).
+
+Note that rpc.h was modified by adding an include guard to the top of the file:
+  #pragma once
+Without it, including this rpc.h in multiple locations can lead to compilation
+errors.
+
+=======
+RUNNING
+=======
+
+Use ./binder to run the binder program.
+
+=======
+LINKING
+=======
+
+In order to link the program (for example, using the given source files),
+simply copy librpc.a into the directory with the source files and run
+
+g++ -L. SOURCE_FILE... -lrpc
