@@ -9,7 +9,6 @@ class ThreadQueue {
  public:
   T pop();
   bool empty();
-  void push(const T& s);
   void push(T&& s);
  private:
   std::mutex accessMutex;
@@ -19,7 +18,7 @@ class ThreadQueue {
 template<class T>
 T ThreadQueue<T>::pop() {
   accessMutex.lock();
-  auto s = std::move(queue.front());
+  T s(std::move(queue.front()));
   queue.pop();
   accessMutex.unlock();
   return s;
@@ -31,13 +30,6 @@ bool ThreadQueue<T>::empty() {
   auto r = queue.empty();
   accessMutex.unlock();
   return r;
-}
-
-template<class T>
-void ThreadQueue<T>::push(const T& s) {
-  accessMutex.lock();
-  queue.push(s);
-  accessMutex.unlock();
 }
 
 template<class T>

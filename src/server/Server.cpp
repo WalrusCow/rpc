@@ -39,19 +39,16 @@ bool Server::connectToBinder() {
       Message::Type::SERVER_REGISTRATION,
       serverAddress.serialize());
   if (success < 0) {
-    std::cerr<<"registration send not success"<<std::endl;
     return false;
   }
   Message message;
   if (binderConnection->read(&message) < 0) {
     // Error in reading
-    std::cerr << "error reading registeration"<<std::endl;
     return false;
   }
   if (message.type != Message::Type::SERVER_REGISTRATION) {
     // Error from binder
     binderConnection->close();
-    std::cerr << "Bad msg type from registration"<<std::endl;
     return false;
   }
   return true;
@@ -110,16 +107,13 @@ int Server::registerRpc(const std::string& name, int* argTypes, skeleton f) {
   if (binderConnection->send(
       Message::Type::RPC_REGISTRATION, signature.serialize()) < 0) {
     // Error
-    std::cerr << "rpc reg Send not success" << std::endl;
     return -1;
   }
   Message message;
   if (binderConnection->read(&message) < 0) {
-    std::cerr << "rpc reg read fail" << std::endl;
     return -1;
   }
   if (message.type != Message::Type::RPC_REGISTRATION) {
-    std::cerr << "rpc reg msg type bad " << std::endl;
     return -1;
   }
 
@@ -192,7 +186,7 @@ void Server::threadWork() {
       return;
     }
 
-    auto job = jobQueue.pop();
+    auto job(std::move(jobQueue.pop()));
     accessMutex.unlock();
 
     ServerFunction* function = getFunction(job.functionCall.signature);
@@ -209,7 +203,7 @@ void Server::threadWork() {
       job.connection.close();
       return;
     }
-    FunctionCall functionCall(std::move(functionCall.signature), args);
+    FunctionCall functionCall(std::move(job.functionCall.signature), args);
     job.connection.send(Message::Type::CALL, functionCall.serialize());
     job.connection.close();
   }
